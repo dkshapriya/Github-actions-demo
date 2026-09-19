@@ -72,6 +72,33 @@ jobs:
             --target-org Test \
             --wait 30
 
+      - name: Create Release Review Summary
+        run: |
+          echo "# 🚀 Release Review" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## Release Details" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release Branch | \`${{ inputs.release_branch }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release Baseline | \`${{ steps.baseline.outputs.base }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test Deployment | ✅ Successful |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## 📦 Generated package.xml" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```xml' >> "$GITHUB_STEP_SUMMARY"
+          cat manifest/generated-package.xml >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## 🔍 Production Review" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The Production deployment will use the **same package.xml artifact** that was generated and successfully deployed to Test." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Review the package above before approving the Production deployment." >> "$GITHUB_STEP_SUMMARY"
+
   deploy-production:
     name: Deploy Release to Production
     needs: deploy-test
