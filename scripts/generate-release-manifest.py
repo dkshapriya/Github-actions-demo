@@ -4,21 +4,6 @@ import re
 from collections import defaultdict
 
 
-SUPPORTED_METADATA = {
-    "lwc": "LightningComponentBundle",
-    "classes": "ApexClass",
-    "triggers": "ApexTrigger",
-    "flows": "Flow",
-    "permissionsets": "PermissionSet",
-    "layouts": "Layout",
-    "flexipages": "FlexiPage",
-}
-
-EXCLUDED_METADATA = {
-    "objects": "CustomObject / CustomField",
-}
-
-
 def get_changed_files(base, head):
     result = subprocess.run(
         [
@@ -69,7 +54,7 @@ def main():
         )
 
         # ---------------------------------------------------------
-        # LWC
+        # Lightning Web Components
         # ---------------------------------------------------------
         lwc_match = re.match(
             r"lwc/([^/]+)/",
