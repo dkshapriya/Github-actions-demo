@@ -1,0 +1,93 @@
+name: Deploy Release to Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: "Release branch to deploy to Test"
+        required: true
+        default: "release/demo-release-1"
+
+jobs:
+  deploy:
+    name: Generate Package and Deploy to Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_branch }}
+          fetch-depth: 0
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Determine release baseline
+        id: baseline
+        run: |
+          BASE=$(git merge-base origin/main HEAD)
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "Release baseline: $BASE"
+
+      - name: Generate release package.xml
+        run: |
+          python3 scripts/generate-release-manifest.py \
+            --base "${{ steps.baseline.outputs.base }}" \
+            --head HEAD \
+            --output manifest/generated-package.xml
+
+      - name: Display generated package.xml
+        run: |
+          echo "===== Generated package.xml ====="
+          cat manifest/generated-package.xml
+          echo "================================="
+
+      - name: Upload release package
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-release-package
+          path: manifest/generated-package.xml
+
+      - name: Authenticate to Salesforce Test
+        run: |
+          echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+          sf org login sfdx-url \
+            --sfdx-url-file auth.txt \
+            --alias Test
+          rm auth.txt
+
+      - name: Validate release against Test
+        run: |
+          sf project deploy start \
+            --manifest manifest/generated-package.xml \
+            --target-org Test \
+            --dry-run \
+            --wait 30
+
+      - name: Deploy release to Test
+        run: |
+          sf project deploy start \
+            --manifest manifest/generated-package.xml \
+            --target-org Test \
+            --wait 30
+
+      - name: Create Test Deployment Summary
+        run: |
+          echo "# 🧪 Test Deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## Release Details" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release Branch | \`${{ inputs.release_branch }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release Baseline | \`${{ steps.baseline.outputs.base }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test Deployment | ✅ Successful |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## 📦 Generated package.xml" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```xml' >> "$GITHUB_STEP_SUMMARY"
+          cat manifest/generated-package.xml >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
