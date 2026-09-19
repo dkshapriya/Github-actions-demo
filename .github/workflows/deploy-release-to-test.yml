@@ -72,7 +72,7 @@ jobs:
             --target-org Test \
             --wait 30
 
-      - name: Create Test Deployment Summary
+            - name: Create Test Deployment Summary
         run: |
           echo "# 🧪 Test Deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -91,3 +91,18 @@ jobs:
           echo '```xml' >> "$GITHUB_STEP_SUMMARY"
           cat manifest/generated-package.xml >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## ℹ️ Deployment Scope" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Automatically supported metadata:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Lightning Web Components" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Apex Classes" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Apex Triggers" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flows" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Permission Sets" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Page Layouts" >> "$GITHUB_STEP_SUMMARY"
+          echo "- FlexiPages" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Custom Objects and Fields remain tracked in Git but are currently excluded from automated deployment." >> "$GITHUB_STEP_SUMMARY"
