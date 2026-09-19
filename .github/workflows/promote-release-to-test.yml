@@ -20,6 +20,11 @@ jobs:
           ref: ${{ inputs.release_branch }}
           fetch-depth: 0
 
+      - name: Use release manifest generator from main
+        run: |
+          git fetch origin main
+          git show origin/main:scripts/generate-release-manifest.py > scripts/generate-release-manifest.py
+
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
 
