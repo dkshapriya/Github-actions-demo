@@ -1,4 +1,4 @@
-name: Promote Release to Test
+name: Promote Release
 
 on:
   workflow_dispatch:
@@ -9,7 +9,8 @@ on:
         default: "release/demo-release-1"
 
 jobs:
-  promote:
+  deploy-test:
+    name: Generate Package and Deploy to Test
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +43,7 @@ jobs:
           cat manifest/generated-package.xml
           echo "================================="
 
-      - name: Upload generated package.xml
+      - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
           name: release-package
@@ -69,4 +70,84 @@ jobs:
           sf project deploy start \
             --manifest manifest/generated-package.xml \
             --target-org Test \
+            --wait 30
+
+      - name: Create Release Review Summary
+        run: |
+          echo "# 🚀 Release Review" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## Release Details" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release Branch | \`${{ inputs.release_branch }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release Baseline | \`${{ steps.baseline.outputs.base }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test Deployment | ✅ Successful |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## 📦 Generated package.xml" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```xml' >> "$GITHUB_STEP_SUMMARY"
+          cat manifest/generated-package.xml >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "## 🔍 Production Review" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The Production deployment will use the **same package.xml artifact** that was generated and successfully deployed to Test." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Review the package above before approving the Production deployment." >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-production:
+    name: Deploy Release to Production
+    needs: deploy-test
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Production
+
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_branch }}
+          fetch-depth: 0
+
+      - name: Download tested release package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: manifest
+
+      - name: Display release package
+        run: |
+          echo "===== Package being promoted to Production ====="
+          cat manifest/generated-package.xml
+          echo "================================================="
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Authenticate to Salesforce Production
+        run: |
+          echo "${{ secrets.SFDX_AUTH_URL_PROD }}" > auth.txt
+          sf org login sfdx-url \
+            --sfdx-url-file auth.txt \
+            --alias DemoProd
+          rm auth.txt
+
+      - name: Validate release against Production
+        run: |
+          sf project deploy start \
+            --manifest manifest/generated-package.xml \
+            --target-org DemoProd \
+            --dry-run \
+            --wait 30
+
+      - name: Deploy release to Production
+        run: |
+          sf project deploy start \
+            --manifest manifest/generated-package.xml \
+            --target-org DemoProd \
             --wait 30
