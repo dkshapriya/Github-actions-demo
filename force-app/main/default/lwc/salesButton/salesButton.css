@@ -1,0 +1,18 @@
+.button-container {
+    padding: 20px;
+}
+
+.sales-button {
+    background-color: #0176d3;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.message {
+    margin-top: 12px;
+    font-weight: bold;
+}
