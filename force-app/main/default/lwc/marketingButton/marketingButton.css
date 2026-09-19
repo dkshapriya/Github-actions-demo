@@ -1,0 +1,13 @@
+.button-container {
+    padding: 20px;
+}
+
+.marketing-button {
+    background-color: #9050e9;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
