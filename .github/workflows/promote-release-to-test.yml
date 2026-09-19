@@ -1,0 +1,72 @@
+name: Promote Release to Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: "Release branch"
+        required: true
+        default: "release/demo-release-1"
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_branch }}
+          fetch-depth: 0
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Determine release baseline
+        id: baseline
+        run: |
+          BASE=$(git merge-base origin/main HEAD)
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "Release baseline: $BASE"
+
+      - name: Generate release package.xml
+        run: |
+          python3 scripts/generate-release-manifest.py \
+            --base "${{ steps.baseline.outputs.base }}" \
+            --head HEAD \
+            --output manifest/generated-package.xml
+
+      - name: Display generated package.xml
+        run: |
+          echo "===== Generated package.xml ====="
+          cat manifest/generated-package.xml
+          echo "================================="
+
+      - name: Upload generated package.xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-package
+          path: manifest/generated-package.xml
+
+      - name: Authenticate to Salesforce Test
+        run: |
+          echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+          sf org login sfdx-url \
+            --sfdx-url-file auth.txt \
+            --alias Test
+          rm auth.txt
+
+      - name: Validate release against Test
+        run: |
+          sf project deploy start \
+            --manifest manifest/generated-package.xml \
+            --target-org Test \
+            --dry-run \
+            --wait 30
+
+      - name: Deploy release to Test
+        run: |
+          sf project deploy start \
+            --manifest manifest/generated-package.xml \
+            --target-org Test \
+            --wait 30
