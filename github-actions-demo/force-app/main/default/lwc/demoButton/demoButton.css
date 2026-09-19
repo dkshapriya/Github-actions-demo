@@ -1,0 +1,9 @@
+.demo-button {
+    background-color: blue;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
