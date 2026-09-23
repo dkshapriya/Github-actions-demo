@@ -1,4 +1,5 @@
 import { LightningElement } from 'lwc';
+import getMessage from '@salesforce/apex/SalesController.getMessage';
 
 export default class FinanceButton extends LightningElement {
     message;
