@@ -2,15 +2,19 @@
   @description       : 
   @author            : Diksha
   @group             : 
-  @last modified on  : 09-19-2026
+  @last modified on  : 09-23-2026
   @last modified by  : Diksha
 -->
 <template>
     <lightning-card title="Finance">
         <div class="button-container">
-            <button class="finance-button">
+            <button class="finance-button"
+            onclick={handleClick}>
                 Finance
             </button>
+            <template lwc:if={message}>
+                <p class="message">{message}</p>
+            </template>
         </div>
     </lightning-card>
 </template>
